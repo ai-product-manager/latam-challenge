@@ -23,6 +23,17 @@ install:		## Install dependencies
 	pip install -r requirements-test.txt
 	pip install -r requirements.txt
 
+.PHONY: format
+format:	
+	black challenge/*.py
+
+.PHONY: lint
+lint:
+	pylint --disable=R,C --extension-pkg-whitelist='pydantic' --ignore-patterns=test_.*?py challenge/*.py
+
+.PHONY: refactor
+refactor: format lint
+
 STRESS_URL = http://127.0.0.1:8000 
 .PHONY: stress-test
 stress-test:
