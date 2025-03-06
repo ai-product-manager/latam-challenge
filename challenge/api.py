@@ -31,20 +31,6 @@ class FlightData(BaseModel):
     class Config:
         extra = "forbid"  # Forbid any extra fields not defined here
 
-    @validator("OPERA")
-    def validate_opera(cls, v):
-        allowed = {"Aerolineas Argentinas"}
-        if v not in allowed:
-            raise ValueError(f"Invalid OPERA: {v}. Allowed: {allowed}")
-        return v
-
-    @validator("TIPOVUELO")
-    def validate_tipovuelo(cls, v):
-        allowed = {"N"}  # Adjust this set as needed
-        if v not in allowed:
-            raise ValueError(f"Invalid TIPOVUELO: {v}. Allowed: {allowed}")
-        return v
-
     @validator("MES")
     def validate_mes(cls, v):
         if not (1 <= v <= 12):
@@ -55,7 +41,7 @@ class FlightData(BaseModel):
 class FlightBatch(BaseModel):
     flights: List[FlightData]
 
-# Initialize the DelayModel from Part I (already implemented)
+# Initialize the DelayModel
 try:
     model = DelayModel()
 except Exception as e:
@@ -77,8 +63,7 @@ async def post_predict(batch: FlightBatch) -> dict:
     Predict flight delays for a batch of flights.
     
     This endpoint receives a JSON payload with a list of flights, validates the input,
-    converts it into a DataFrame, preprocesses it using the DelayModel from Part I,
-    and returns predictions for each flight.
+    converts it into a DataFrame, preprocesses it using the DelayModel, and returns predictions.
     
     Args:
         batch (FlightBatch): A JSON object containing flight data.
@@ -92,7 +77,7 @@ async def post_predict(batch: FlightBatch) -> dict:
     try:
         # Convert the batch of flights to a DataFrame
         df = pd.DataFrame([flight.dict() for flight in batch.flights])
-        # Preprocess data (only working with OPERA, TIPOVUELO, and MES)
+        # Preprocess the data using DelayModel (only using OPERA, TIPOVUELO, and MES)
         features = model.preprocess(df)
         predictions = model.predict(features)
         return {"predict": predictions}
@@ -100,7 +85,3 @@ async def post_predict(batch: FlightBatch) -> dict:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
