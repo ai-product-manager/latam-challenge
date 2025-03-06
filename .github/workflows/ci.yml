@@ -23,6 +23,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 3. Create venv and activate it
+      - name: Create venv
+        run: |
+          make venv
+          source .venv/bin/activate
+
       # 3. Install dependencies
       - name: Install dependencies
         run: |
