@@ -81,41 +81,48 @@ class DelayModel:
         """
         Prepare raw data for training or prediction.
 
+        Expects data with at least the columns: "OPERA", "TIPOVUELO", and "MES".
+        If date columns ("Fecha-I", "Fecha-O") are present, derived features are computed.
+        Otherwise, only one-hot encoding on the required columns is performed.
+
         Args:
-            data (pd.DataFrame): Raw flight data with at least 'Fecha-I', 'Fecha-O', 'OPERA', 'TIPOVUELO'.
-            target_column (str, optional): If provided, returns a tuple (features, target); otherwise, only features.
+            data (pd.DataFrame): Raw flight data.
+            target_column (str, optional): If provided, returns a tuple (features, target); 
+                                        otherwise, returns only the features DataFrame.
 
         Returns:
-            Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
-                - (features, target) if target_column is provided.
-                - Only the features DataFrame otherwise.
+            Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]: The processed features (and target if specified).
+
+        Raises:
+            ValueError: If required columns are missing.
         """
         try:
             df = data.copy()
-            # Convert date columns to datetime (vectorized)
-            df[["Fecha-I", "Fecha-O"]] = df[["Fecha-I", "Fecha-O"]].apply(
-                pd.to_datetime, errors="coerce"
-            )
+            # Check for required categorical fields
+            required_columns = self.categorical_features
+            missing = [col for col in required_columns if col not in df.columns]
+            if missing:
+                raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
-            # Drop rows with invalid or missing dates
-            df = df.dropna(subset=["Fecha-I", "Fecha-O"])
+            # If date columns exist, compute derived features; otherwise, skip them.
+            if "Fecha-I" in df.columns and "Fecha-O" in df.columns:
+                df[["Fecha-I", "Fecha-O"]] = df[["Fecha-I", "Fecha-O"]].apply(pd.to_datetime, errors="coerce")
+                df = df.dropna(subset=["Fecha-I", "Fecha-O"])
+                df = compute_vectorized_features(self._threshold_in_minutes, df)
+                # Also update "MES" if needed from "Fecha-I"
+                df["MES"] = df["Fecha-I"].dt.month
 
-            # Compute derived features vectorized
-            df = compute_vectorized_features(self._threshold_in_minutes, df)
-
-            # Extract MES (month) from 'Fecha-I'
-            df["MES"] = df["Fecha-I"].dt.month
-
-            # One-hot encode categorical features
+            # One-hot encode the required categorical features
             dummies = pd.get_dummies(df[self.categorical_features], prefix_sep="_")
-
-            # Reindex to ensure the final feature set contains exactly the expected columns
+            # Ensure the final features contain exactly the expected columns
             features_df = dummies.reindex(columns=self.expected_features, fill_value=0)
             logger.info("Preprocessing complete: features generated.")
+            
             if target_column and target_column in df.columns:
                 target_df = df[[target_column]]
                 logger.info("Preprocessing complete: target generated.")
                 return features_df, target_df
+            
             return features_df
         except Exception as e:
             logger.exception("Error in preprocessing: %s", e)
