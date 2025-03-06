@@ -1,2 +1,4 @@
+black==22.10.0
 matplotlib~=3.7.2
+pylint==3.3.3
 seaborn~=0.12.2

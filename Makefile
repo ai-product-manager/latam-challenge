@@ -19,11 +19,23 @@ venv:			## Create a virtual environment
 
 .PHONY: install
 install:		## Install dependencies
+	pip install --upgrade pip &&\
 	pip install -r requirements-dev.txt
 	pip install -r requirements-test.txt
 	pip install -r requirements.txt
 
-STRESS_URL = http://127.0.0.1:8000 
+.PHONY: format
+format:	
+	black challenge/*.py
+
+.PHONY: lint
+lint:
+	pylint --disable=R,C --extension-pkg-whitelist='pydantic' --ignore-patterns=test_.*?py challenge/*.py
+
+.PHONY: refactor
+refactor: format lint
+
+STRESS_URL = https://my-latam-api-834519104940.us-central1.run.app
 .PHONY: stress-test
 stress-test:
 	# change stress url to your deployed app 
@@ -33,12 +45,12 @@ stress-test:
 .PHONY: model-test
 model-test:			## Run tests and coverage
 	mkdir reports || true
-	pytest --cov-config=.coveragerc --cov-report term --cov-report html:reports/html --cov-report xml:reports/coverage.xml --junitxml=reports/junit.xml --cov=challenge tests/model
+	python -m pytest --cov-config=.coveragerc --cov-report term --cov-report html:reports/html --cov-report xml:reports/coverage.xml --junitxml=reports/junit.xml --cov=challenge tests/model
 
 .PHONY: api-test
 api-test:			## Run tests and coverage
 	mkdir reports || true
-	pytest --cov-config=.coveragerc --cov-report term --cov-report html:reports/html --cov-report xml:reports/coverage.xml --junitxml=reports/junit.xml --cov=challenge tests/api
+	python -m pytest --cov-config=.coveragerc --cov-report term --cov-report html:reports/html --cov-report xml:reports/coverage.xml --junitxml=reports/junit.xml --cov=challenge tests/api
 
 .PHONY: build
 build:			## Build locally the python artifact
