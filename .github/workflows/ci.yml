@@ -1,7 +1,62 @@
 name: 'Continuous Integration'
 
 on:
-  ...
+  # Run CI on every push and pull request to dev or feature branches
+  push:
+    branches: [ "dev", "feature/**" ]
+  pull_request:
+    branches: [ "dev", "feature/**" ]
 
 jobs:
-  ...
+  build_and_test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          make install
+
+      # 4. Run Refactor
+      - name: Refactor
+        run: |
+          make refactor
+
+      # 5. Run model test
+      - name: Run tests
+        run: |
+          make model-test
+
+      # 5. Run model test
+      - name: Run tests
+        run: |
+          make model-test
+
+      # 6. Run api test
+      - name: Run tests
+        run: |
+          make api-test
+
+      # 7. Run stress test
+      - name: Run tests
+        run: |
+          make api-test
+
+      # 7. Upload coverage as an artifact (optional)
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: reports/
+          retention-days: 3
