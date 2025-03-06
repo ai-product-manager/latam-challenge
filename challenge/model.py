@@ -62,6 +62,7 @@ class DelayModel:
     def __init__(self, config: Dict[str, Any] = None):
         # Load external configuration; if not provided, try to load from YAML.
         self.config = config if config is not None else load_config()
+        self._model_config: Dict[str, Any] = {}
         # Raise error if no configuration is loaded.
         if not self.config:
             raise ValueError("Configuration could not be loaded.")
@@ -87,7 +88,7 @@ class DelayModel:
 
         Args:
             data (pd.DataFrame): Raw flight data.
-            target_column (str, optional): If provided, returns a tuple (features, target); 
+            target_column (str, optional): If provided, returns a tuple (features, target);
                                         otherwise, returns only the features DataFrame.
 
         Returns:
@@ -106,7 +107,9 @@ class DelayModel:
 
             # If date columns exist, compute derived features; otherwise, skip them.
             if "Fecha-I" in df.columns and "Fecha-O" in df.columns:
-                df[["Fecha-I", "Fecha-O"]] = df[["Fecha-I", "Fecha-O"]].apply(pd.to_datetime, errors="coerce")
+                df[["Fecha-I", "Fecha-O"]] = df[["Fecha-I", "Fecha-O"]].apply(
+                    pd.to_datetime, errors="coerce"
+                )
                 df = df.dropna(subset=["Fecha-I", "Fecha-O"])
                 df = compute_vectorized_features(self._threshold_in_minutes, df)
                 # Also update "MES" if needed from "Fecha-I"
@@ -117,12 +120,12 @@ class DelayModel:
             # Ensure the final features contain exactly the expected columns
             features_df = dummies.reindex(columns=self.expected_features, fill_value=0)
             logger.info("Preprocessing complete: features generated.")
-            
+
             if target_column and target_column in df.columns:
                 target_df = df[[target_column]]
                 logger.info("Preprocessing complete: target generated.")
                 return features_df, target_df
-            
+
             return features_df
         except Exception as e:
             logger.exception("Error in preprocessing: %s", e)
@@ -232,6 +235,6 @@ class DelayModel:
                     f
                 )  # pylint: disable=attribute-defined-outside-init
             logger.info("Model and configuration loaded from disk.")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.exception("Error loading model: %s", e)
             self._model = None
