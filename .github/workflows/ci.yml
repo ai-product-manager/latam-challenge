@@ -21,36 +21,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: 3.12
 
-      # 3. Install dependencies
-      - name: Install dependencies
+      # 3. Create venv and install dependencies
+      - name: Setup Virtual Environment and Install Dependencies
         run: |
+          make venv
+          source .venv/bin/activate
           make install
 
       # 4. Run Refactor
       - name: Refactor
         run: |
+          source .venv/bin/activate
           make refactor
 
       # 5. Run model test
       - name: Run tests
         run: |
-          make model-test
-
-      # 5. Run model test
-      - name: Run model test
-        run: |
+          source .venv/bin/activate
           make model-test
 
       # 6. Run api test
       - name: Run api test
         run: |
-          make api-test
-
-      # 7. Run stress test
-      - name: Run stress test
-        run: |
+          source .venv/bin/activate
           make api-test
 
       # 7. Upload coverage as an artifact (optional)

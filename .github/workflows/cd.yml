@@ -48,7 +48,8 @@ jobs:
             --allow-unauthenticated \
             --port 8000
 
-      # 7. (Optional) Run integration or smoke tests after deployment
-      - name: Smoke test
+      # 7. Run stress test
+      - name: Run api test
         run: |
-          curl https://${{ secrets.CLOUD_RUN_SERVICE }}-${{ secrets.PROJECT_ID }}.run.app/health || exit 1
+          source .venv/bin/activate
+          make stress-test
