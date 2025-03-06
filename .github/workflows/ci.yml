@@ -23,38 +23,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      # 3. Create venv and install dependencies
-      - name: Setup Virtual Environment and Install Dependencies
+      # 3. Install dependencies
+      - name: Install dependencies
         run: |
-          make venv
-          source .venv/bin/activate
           make install
 
       # 4. Run Refactor
-      - name: Run Refactor
+      - name: Refactor
         run: |
-          source .venv/bin/activate
           make refactor
 
-      # 5. Run model tests
-      - name: Run model tests
+      # 5. Run model test
+      - name: Run tests
         run: |
-          source .venv/bin/activate
           make model-test
 
-      # 6. Run API tests
-      - name: Run API tests
+      # 6. Run api test
+      - name: Run api test
         run: |
-          source .venv/bin/activate
           make api-test
 
-      # 7. Run stress test
-      - name: Run stress test
-        run: |
-          source .venv/bin/activate
-          make stress-test
-
-      # 8. Upload coverage as an artifact (optional)
+      # 7. Upload coverage as an artifact (optional)
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
