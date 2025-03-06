@@ -34,7 +34,7 @@ lint:
 .PHONY: refactor
 refactor: format lint
 
-STRESS_URL = http://127.0.0.1:8000 
+STRESS_URL = https://my-latam-api-834519104940.us-central1.run.app
 .PHONY: stress-test
 stress-test:
 	# change stress url to your deployed app 
