@@ -1,7 +1,17 @@
 name: 'Continuous Delivery'
 
 on:
-  ...
+  # Deploy automatically on push to main
+  push:
+    branches: [ "main" ]
 
 jobs:
-  ...
+  build_deploy:
+    name: Build & Deploy to Cloud Run
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Check out code
+        uses: actions/checkout@v3
+
