@@ -1,1 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="4" time="66.176" timestamp="2025-03-05T16:11:45.543956" hostname="PELI002"><testcase classname="tests.model.test_model.TestModel" name="test_model_fit" time="13.001" /><testcase classname="tests.model.test_model.TestModel" name="test_model_predict" time="5.139" /><testcase classname="tests.model.test_model.TestModel" name="test_model_preprocess_for_serving" time="5.299" /><testcase classname="tests.model.test_model.TestModel" name="test_model_preprocess_for_training" time="8.063" /></testsuite></testsuites>
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="37.437" timestamp="2025-03-05T19:30:06.529617" hostname="PELI002"><testcase classname="tests.api.test_api.TestBatchPipeline" name="test_should_failed_unkown_column_1" time="0.273" /><testcase classname="tests.api.test_api.TestBatchPipeline" name="test_should_failed_unkown_column_2" time="0.016" /><testcase classname="tests.api.test_api.TestBatchPipeline" name="test_should_failed_unkown_column_3" time="0.017" /><testcase classname="tests.api.test_api.TestBatchPipeline" name="test_should_get_predict" time="0.128"><failure message="AssertionError: 500 != 200">self = &lt;tests.api.test_api.TestBatchPipeline testMethod=test_should_get_predict&gt;
+
+    def test_should_get_predict(self):
+        data = {
+            "flights": [
+                {
+                    "OPERA": "Aerolineas Argentinas",
+                    "TIPOVUELO": "N",
+                    "MES": 3
+                }
+            ]
+        }
+        # when("xgboost.XGBClassifier").predict(ANY).thenReturn(np.array([0])) # change this line to the model of chosing
+        response = self.client.post("/predict", json=data)
+&gt;       self.assertEqual(response.status_code, 200)
+E       AssertionError: 500 != 200
+
+tests/api/test_api.py:23: AssertionError</failure></testcase></testsuite></testsuites>
