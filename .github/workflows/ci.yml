@@ -39,17 +39,17 @@ jobs:
           make model-test
 
       # 5. Run model test
-      - name: Run tests
+      - name: Run model test
         run: |
           make model-test
 
       # 6. Run api test
-      - name: Run tests
+      - name: Run api test
         run: |
           make api-test
 
       # 7. Run stress test
-      - name: Run tests
+      - name: Run stress test
         run: |
           make api-test
 

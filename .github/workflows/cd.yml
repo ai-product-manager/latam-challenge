@@ -15,3 +15,40 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      # 2. Set up gcloud CLI
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      # 3. Configure Docker to use gcloud as a credential helper
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev,gcr.io
+
+      # 4. Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest .
+
+      # 5. Push the image to GCR
+      - name: Push Docker image
+        run: |
+          docker push gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest
+
+      # 6. Deploy to Cloud Run
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
+            --image gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest \
+            --platform managed \
+            --region ${{ secrets.REGION }} \
+            --allow-unauthenticated \
+            --port 8000
+
+      # 7. (Optional) Run integration or smoke tests after deployment
+      - name: Smoke test
+        run: |
+          curl https://${{ secrets.CLOUD_RUN_SERVICE }}-${{ secrets.PROJECT_ID }}.run.app/health || exit 1
