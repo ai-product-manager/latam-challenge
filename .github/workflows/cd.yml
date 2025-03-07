@@ -59,14 +59,12 @@ jobs:
 
       # 9. Deploy to Cloud Run
       - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
-            --image gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest \
-            --platform managed \
-            --region ${{ secrets.REGION }} \
-            --allow-unauthenticated \
-            --port 8000 \
-            --timeout 600
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ secrets.CLOUD_RUN_SERVICE }}
+          region: ${{ secrets.REGION }}
+          image: gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest
 
       # 10. Run stress test
       - name: Run stress test
