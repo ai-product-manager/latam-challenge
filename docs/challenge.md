@@ -21,18 +21,32 @@ This document focuses on **Part I – Model**, explaining our model selection, k
 
 ### 2.1 Business Context and Model Selection
 
-Flight delay prediction is critical for airport operations to reduce costs and improve passenger experience. We evaluated several algorithms—including **RandomForestClassifier** and **Logistic Regression**—and found that **XGBoost (XGBClassifier)** provided the best balance of predictive performance and computational efficiency.
+Flight delays can have a cascading impact on airport operations. To mitigate these issues, we developed a predictive model to forecast delays in real time. During our exploratory phase (documented in our Jupyter Notebook), we evaluated several algorithms:
+- **Logistic Regression:** Simple and fast but underperformed in capturing the minority class (delayed flights).
+- **XGBoost (XGBClassifier):** Delivered superior predictive performance, especially when addressing class imbalance through the `scale_pos_weight` parameter.
 
-**Why XGBoost?**  
-- **High Predictive Power:** XGBoost achieved a recall for delayed flights above our threshold of 0.60.
-- **Handling Imbalance:** The model’s `scale_pos_weight` parameter effectively adjusts for class imbalance.
-- **Efficiency and Scalability:** Faster convergence and robust performance under various operational loads.
+After comparing key performance metrics (accuracy, precision, recall, f1-score, and AUC), we observed the following:
 
-This led us to encapsulate our chosen model in the `DelayModel` class (located in `model.py`).
+| Model                              | Accuracy | Macro Precision | Macro Recall | Macro F1 | Weighted Precision | Weighted Recall | Weighted F1 |
+|------------------------------------|----------|-----------------|--------------|----------|--------------------|-----------------|-------------|
+| XGBoost (with Balance)             | 0.55     | 0.56            | 0.61         | 0.51     | 0.76               | 0.55            | 0.60        |
+| XGBoost (without Balance)          | 0.81     | 0.79            | 0.50         | 0.45     | 0.80               | 0.81            | 0.73        |
+| Logistic Regression (with Balance) | 0.55     | 0.56            | 0.60         | 0.51     | 0.76               | 0.55            | 0.60        |
+| Logistic Regression (without Balance) | 0.81  | 0.67            | 0.51         | 0.46     | 0.76               | 0.81            | 0.73        |
+
+**Key Observations:**
+- When no balancing is applied, both models achieve high accuracy but fail to adequately capture delayed flights (very low recall for class 1).
+- With balancing, XGBoost improves the recall for the minority class (delays), which is critical in our use case.
+- XGBoost’s advanced handling of feature importance further informs which factors drive delays, supporting continuous model improvement.
+
+**Model Selection Rationale:**
+- **XGBoost with Balance** is chosen because its recall (0.61 for delayed flights) meets our operational threshold. Capturing a high percentage of delays is vital to avoid unexpected disruptions.
+- It also provides a detailed feature importance analysis, which is essential for transparency and future enhancements.
+- Our implementation in `model.py` uses XGBoost with a balancing factor (multiplied by 1.3), which aligns with our experimental results and business requirements.
 
 ---
 
-### 2.2 Key Code Excerpt
+### 2.2 Implementation in model.py
 
 Below is a key snippet from our `DelayModel` class, illustrating how we handle class imbalance and train our model:
 
@@ -137,26 +151,30 @@ The API is packaged using a Dockerfile. Key details include:
   -Port Configuration: The container is set to listen on port 8000 (Cloud Run automatically sets the PORT variable; our Dockerfile ensures that uvicorn listens on this port).
 
 ```dockerfile
+# syntax=docker/dockerfile:1.2
+# Using this image due the application was developed with this version and is a lightweight official Python image
 FROM python:3.12-slim
+
+# Set the working directory inside the container
 WORKDIR /app
 
 # Install system dependencies
 RUN apt update && apt install -y gcc g++ python3-dev libpq-dev
 
-# Copy project files
+# Copy the project files into the container
 COPY challenge /app/challenge
 COPY data /app/data
 COPY requirements.txt /app/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install -r /app/requirements.txt
 
-# Expose port 8000 (Cloud Run will supply PORT automatically)
+# Expose the port that FastAPI runs on
 EXPOSE 8000
 
-# Start the application with uvicorn
-CMD ["sh", "-c", "uvicorn challenge.api:app --host 0.0.0.0 --port 8000"]
+# Command to run the application
+CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 - Deployment via Cloud Run:
@@ -188,39 +206,69 @@ During a 60-second stress test, the API handled over 2658 requests with:
 ---
 ## 5. Part IV – CI/CD & Code Quality Best Practices
 
-**5.1 Business Context** 
+### 5.1 CI/CD Pipelines
+We leverage GitHub Actions for both continuous integration and delivery:
 
-Automated deployment and testing are critical for rapid iteration and reliable releases. Our CI/CD pipeline ensures that every change is validated and deployed automatically, reducing time-to-market and minimizing human error.
+- Continuous Integration (ci.yml):
+  - Checks out the repo and sets up Python.
+  - Creates a virtual environment, installs dependencies.
+  - Runs unit tests (model and API) and coverage reports.
+  - Applies linting (Pylint) and code formatting (Black).
 
-**5.2 Technical Implementation**
+- Continuous Delivery (cd.yml):
+  - Authenticates with GCP using a service account key stored in GitHub Secrets (e.g., GCP_SA_KEY) for security and compliance.
+  - Builds and pushes a new Docker image to Google Container Registry:
 
-We implemented two GitHub Actions workflows:
+```yaml
+- name: Build Docker image
+  run: |
+    docker build -t gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest .
 
-- **Continuous Integration (ci.yml):**
+- name: Push Docker image
+  run: |
+    docker push gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest
+```
 
-  - **Checks Out Code:** Ensures the latest version of the code is available.
-  - **Sets Up a Virtual Environment:** Installs all dependencies from our requirements files.
-  - **Runs Tests and Linting:** Executes unit tests for the model and API (using pytest) and runs code quality checks.
-  - **Uploads Coverage Reports:** Artifacts from tests are uploaded for further analysis.
+![Docker Image.](images/gcr.png)
 
-- **Continuous Delivery (cd.yml):**
+- Deploys automatically to Cloud Run, URL de la API - [my-latam-api](https://my-latam-api-834519104940.us-central1.run.app/health):
 
-  - **Authenticates to Google Cloud:** Using a service account stored in GitHub Secrets.
-  - **Builds and Pushes a Docker Image:** The image is tagged with the latest commit SHA and pushed to Google Container Registry.
-  - **Deploys to Cloud Run:** The service is updated with the new image automatically.
+```yaml
+- name: Deploy to Cloud Run
+  uses: google-github-actions/deploy-cloudrun@v2
+  with:
+    service: ${{ secrets.CLOUD_RUN_SERVICE }}
+    region: ${{ secrets.REGION }}
+    image: gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest
+```
 
-**5.2 Code Refactoring & Quality**
+![Cloud Run.](images/apigcr.png)
 
-To ensure our code is maintainable and adheres to industry best practices, we have integrated this tools from the development beginning:
+- Secrets Management:
+  - We store credentials (service account JSON, project ID, etc.) in GitHub Secrets.
+  - This approach ensures sensitive data is not committed to the repository, meeting security and compliance requirements.
 
-- **Black:** Automatically formats our Python code for consistency.
-- **Pylint:** Lints our code to catch potential issues and enforce coding standards.
-- **Code Reviews:** Every commit triggers CI tests, ensuring any code refactoring or improvements are validated before deployment.
-- **Branching Model (GitFlow):**
-  - ```main``` as the stable production branch.
-  - ```dev``` for ongoing integration.
-  - ```feature/*``` branches for new features (e.g., ```feature/api```, ```feature/cicd```, etc.).
-  - Merges from ```feature/*``` → ```dev``` → ```main``` ensures a clear path from development to production.
+### 5.2 Docker Image & Cloud Run Updates
+
+Every merge into ```main``` triggers the CD pipeline:
+
+1. Builds a fresh Docker image with the latest code.
+2. Pushes it to GCR with a consistent tag (e.g., latest) or a commit-based tag for versioning.
+3. Deploys the updated image to Cloud Run, creating a new revision for zero-downtime updates.
+
+### 5.3 GitFlow Branching Strategy
+
+- ```main```: Stable production branch.
+- ```dev```: Integration branch where features are merged after initial testing.
+- ```feature/*```: Short-lived branches for new features (e.g., ```feature/api```, ```feature/cicd```, etc.). 
+- Merges from ```feature/*``` → ```dev``` → ```main``` ensures a clear path from development to production.
+
+This branching model ensures a clean development workflow and predictable release cycle.
+
+### 5.4 Code Refactoring & Best Practices
+- Black: Enforces consistent Python code formatting across all modules.
+- Pylint: Detects potential errors, enforces coding standards.
+- Automated Testing: Ensures every commit is validated before deployment, reducing risk of production issues.
 
 ![Refactor.](images/refactor.png)
 
