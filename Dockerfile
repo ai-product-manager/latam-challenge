@@ -2,7 +2,6 @@
 #FROM python:latest
 # Using this image due the application was developed with this version and is a lightweight official Python image
 FROM python:3.12-slim
-# put you docker configuration here
 
 # Set the working directory inside the container
 WORKDIR /app
