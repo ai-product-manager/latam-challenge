@@ -15,13 +15,26 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      # 2. Authenticate to GCP using service account key
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      # 3. Create venv and install dependencies
+      - name: Setup Virtual Environment and Install Dependencies
+        run: |
+          make venv
+          source .venv/bin/activate
+          make install
+
+      # 4. Authenticate to GCP using service account key
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 3. Set up Google Cloud SDK
+      # 5. Set up Google Cloud SDK
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
@@ -29,22 +42,22 @@ jobs:
           skip_install: false
           version: latest
 
-      # 4. Configure Docker to use gcloud as a credential helper
+      # 6. Configure Docker to use gcloud as a credential helper
       - name: Configure Docker
         run: |
           gcloud auth configure-docker gcr.io --quiet
 
-      # 5. Build the Docker image
+      # 7. Build the Docker image
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest .
 
-      # 6. Push the image to GCR
+      # 8. Push the image to GCR
       - name: Push Docker image
         run: |
           docker push gcr.io/${{ secrets.PROJECT_ID }}/my-latam-api:latest
 
-      # 7. Deploy to Cloud Run
+      # 9. Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
@@ -54,7 +67,7 @@ jobs:
             --allow-unauthenticated \
             --port 8000
 
-      # 8. Run stress test
+      # 10. Run stress test
       - name: Run stress test
         run: |
           source .venv/bin/activate
