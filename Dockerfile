@@ -16,8 +16,8 @@ COPY data /app/data
 COPY requirements.txt /app/
 
 # Install dependencies
-#RUN pip install --no-cache-dir --upgrade pip
-#RUN pip install -r /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install -r /app/requirements.txt
 
 # Expose the port that FastAPI runs on
 EXPOSE 8000
