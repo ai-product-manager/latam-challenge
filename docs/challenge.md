@@ -8,10 +8,10 @@
 
 Airports face significant challenges when flights are delayed, which directly impacts operational efficiency and customer satisfaction. Our solution transforms a data science notebook into a production-grade, scalable service that delivers **real-time flight delay predictions**. We achieved this by building a robust pipeline composed of four integrated parts:
 
-1. **Model (Part I)**
-2. **API (Part II)**
-3. **Deployment (Part III)**
-4. **CI/CD (Part IV)**
+- **Part I - Model**
+- **Part II - API**
+- **Part III - Deployment**
+- **Part IV - CI/CD & Code Quality Best Practices**
 
 This document focuses on **Part I – Model**, explaining our model selection, key implementation details, and test results.
 
@@ -70,11 +70,10 @@ def fit(self, features: pd.DataFrame, target: pd.DataFrame) -> None:
 
 **Model Unit Tests:**
 
-- Executed via make model-test, these tests confirm that our model consistently meets our performance thresholds (e.g., recall above 0.60 for delayed flights) and validate the correctness of our processing logic.
+Executed via make model-test, these tests confirm that our model consistently meets our performance thresholds (e.g., recall above 0.60 for delayed flights) and validate the correctness of our processing logic.
 
-**API Tests:**
+![Model test results.](images/model-test.png)
 
-- Running make api-test confirms that our FastAPI endpoints return the expected results and handle input validation robustly using Pydantic.
 
 ### 2.4 Conclusion for Part I – Model
 
@@ -117,6 +116,8 @@ async def post_predict(batch: FlightBatch) -> dict:
 
 **API Tests (make api-test):**
 - The API endpoints have been thoroughly tested using automated tests. Input validation via Pydantic ensures only valid data is processed, and responses match expected outcomes.
+
+![API test results.](images/api-test.png)
 
 ---
 ## 4. Part III – Deployment
@@ -183,7 +184,7 @@ During a 60-second stress test, the API handled over 2400 requests with:
   - Some outliers up to ~12 seconds under peak load, which are being analyzed for further optimization.
 
 ---
-## 5. Part IV – CI/CD
+## 5. Part IV – CI/CD & Code Quality Best Practices
 
 **5.1 Business Context** 
 
@@ -205,6 +206,21 @@ We implemented two GitHub Actions workflows:
   - **Authenticates to Google Cloud:** Using a service account stored in GitHub Secrets.
   - **Builds and Pushes a Docker Image:** The image is tagged with the latest commit SHA and pushed to Google Container Registry.
   - **Deploys to Cloud Run:** The service is updated with the new image automatically.
+
+**5.2 Code Refactoring & Quality**
+
+To ensure our code is maintainable and adheres to industry best practices, we have integrated this tools from the development beginning:
+
+- **Black:** Automatically formats our Python code for consistency.
+- **Pylint:** Lints our code to catch potential issues and enforce coding standards.
+- **Code Reviews:** Every commit triggers CI tests, ensuring any code refactoring or improvements are validated before deployment.
+- **Branching Model (GitFlow):**
+  - ```main``` as the stable production branch.
+  - ```dev``` for ongoing integration.
+  - ```feature/*``` branches for new features (e.g., ```feature/api```, ```feature/cicd```, etc.).
+  - Merges from ```feature/*``` → ```dev``` → ```main``` ensures a clear path from development to production.
+
+![Refactor.](images/refactor.png)
 
 **Badges:**
 

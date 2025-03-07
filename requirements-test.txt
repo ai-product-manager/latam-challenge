@@ -6,3 +6,4 @@ jinja2==3.0.3
 pytest>=8.1.1
 pytest-cov~=2.12.1
 mockito~=1.2.2
+werkzeug==2.0.3
