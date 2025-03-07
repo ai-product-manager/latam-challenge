@@ -16,12 +16,11 @@ COPY data /app/data
 COPY requirements.txt /app/
 
 # Install dependencies
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install -r /app/requirements.txt
+#RUN pip install --no-cache-dir --upgrade pip
+#RUN pip install -r /app/requirements.txt
 
 # Expose the port that FastAPI runs on
-ENV PORT=8000
-EXPOSE $PORT
+EXPOSE 8000
 
 # Command to run the application
-CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+CMD ["uvicorn", "challenge.api:app", "--host", "0.0.0.0", "--port", "8000"]

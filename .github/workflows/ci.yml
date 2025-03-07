@@ -48,7 +48,13 @@ jobs:
           source .venv/bin/activate
           make api-test
 
-      # 7. Upload coverage as an artifact 
+      # 7. Run stress test
+      - name: Run stress test
+        run: |
+          source .venv/bin/activate
+          make stress-test
+
+      # 8. Upload coverage as an artifact 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
