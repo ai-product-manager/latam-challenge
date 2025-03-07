@@ -65,7 +65,8 @@ jobs:
             --platform managed \
             --region ${{ secrets.REGION }} \
             --allow-unauthenticated \
-            --port 8000
+            --port 8000 \
+            --timeout 600
 
       # 10. Run stress test
       - name: Run stress test
