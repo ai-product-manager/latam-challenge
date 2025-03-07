@@ -65,10 +65,19 @@ jobs:
             --platform managed \
             --region ${{ secrets.REGION }} \
             --allow-unauthenticated \
-            --port 8000
+            --port 8000 \
+            --set-env-vars PORT=8000
 
       # 10. Run stress test
       - name: Run stress test
         run: |
           source .venv/bin/activate
           make stress-test
+
+      # 11. Upload coverage as an artifact 
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+          retention-days: 3
