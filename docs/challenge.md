@@ -178,10 +178,12 @@ make stress-test
 **Stress Tests:**
 
 - Our stress testing (make stress-test) simulated high traffic loads, achieving:
-During a 60-second stress test, the API handled over 2400 requests with:
-  - Median Response Time: ~490ms
-  - Average Response Time: ~656ms
-  - Some outliers up to ~12 seconds under peak load, which are being analyzed for further optimization.
+During a 60-second stress test, the API handled over 2658 requests with:
+  - Median Response Time: ~550ms
+  - Average Response Time: ~637ms
+  - Some outliers up to ~5.7 seconds under peak load, which are being analyzed for further optimization.
+
+![Stress test results.](images/stress.png)
 
 ---
 ## 5. Part IV – CI/CD & Code Quality Best Practices
